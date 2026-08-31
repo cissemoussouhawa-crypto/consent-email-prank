@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fa">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ارسال پیام با رضایت</title>
+  <style>
+    body { font-family: Tahoma, Arial, sans-serif; padding:20px; max-width:720px; margin:auto; direction:rtl; }
+    label { display:block; margin-top:10px; }
+    input[type="text"], input[type="email"], textarea { width:100%; padding:8px; box-sizing:border-box; }
+    textarea { height:140px; }
+    .notice { background:#fff3cd; padding:10px; border-radius:6px; margin-bottom:10px; }
+    .success { color:green; }
+    .error { color:red; }
+    button { margin-top:10px; padding:8px 12px; }
+    footer { margin-top:20px; font-size:0.9em; color:#555 }
+  </style>
+</head>
+<body>
+  <h1>ارسال پیام (با رضایت)</h1>
+  <div class="notice">
+    این صفحه برای شوخیِ آگاهانه طراحی شده؛ هر پیامی که ارسال شود با آگاهی فرستنده به ایمیل مقصد ارسال خواهد شد.
+    لطفاً از ارسال اطلاعات حساس (پسورد، کارت، ...) خودداری کنید.
+  </div>
+
+  <form id="sendForm">
+    <label>نام (اختیاری)
+      <input type="text" id="name" placeholder="مثلاً: علی" />
+    </label>
+    <label>ایمیل شما (اختیاری)
+      <input type="email" id="email" placeholder="example@domain.com" />
+    </label>
+    <label>پیام
+      <textarea id="message" required placeholder="اینجا چیزی تایپ کن..."></textarea>
+    </label>
+
+    <label>
+      <input type="checkbox" id="consent" />
+      من موافقم این پیام همراه با نام/ایمیلم به آدرس cissemoussouhawa@gmail.com ارسال شود.
+    </label>
+
+    <button type="submit">ارسال پیام</button>
+  </form>
+
+  <div id="result"></div>
+
+  <script>
+    const form = document.getElementById('sendForm');
+    const result = document.getElementById('result');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      result.textContent = '';
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const message = document.getElementById('message').value.trim();
+      const consent = document.getElementById('consent').checked;
+
+      if (!consent) {
+        result.innerHTML = '<p class="error">برای ارسال، باید رضایت را تایید کنید.</p>';
+        return;
+      }
+      if (!message) {
+        result.innerHTML = '<p class="error">پیام نمی‌تواند خالی باشد.</p>';
+        return;
+      }
+
+      try {
+        const resp = await fetch('/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, message, consent })
+        });
+        const j = await resp.json();
+        if (resp.ok) {
+          let msg = '<p class="success">پیام با موفقیت ارسال شد. ممنون!';
+          if (j.previewUrl) msg += ' <br>Preview: <a href="'+j.previewUrl+'" target="_blank">نمایش ایمیل تست</a>';
+          msg += '</p>';
+          result.innerHTML = msg;
+          form.reset();
+        } else {
+          result.innerHTML = '<p class="error">خطا: ' + (j.error || 'ارسال ناموفق') + '</p>';
+        }
+      } catch (err) {
+        result.innerHTML = '<p class="error">خطای ارتباط: ' + err.message + '</p>';
+      }
+    });
+  </script>
+
+  <footer>
+    نسخهٔ دمو — از ارسال اطلاعات حساس خودداری کنید.
+  </footer>
+</body>
+</html>
